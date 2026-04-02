@@ -1,80 +1,68 @@
-require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10
+// Kết nối MySQL trong Docker
+const db = mysql.createConnection({
+    host: 'db',
+    user: 'root',
+    password: 'secret',
+    database: 'calc_db'
 });
 
-app.get('/health', (req, res) => res.json({ status: "ok" }));
+db.connect(err => {
+    if (err) console.error('❌ Lỗi kết nối DB: ' + err.stack);
+    else console.log('✅ Đã kết nối MySQL thành công!');
+});
 
-app.get('/about', (req, res) => {
+// API Lấy thông tin cho trang About riêng biệt
+app.get('/api/about', (req, res) => {
     res.json({
-        name: "Trần Thế Kiệt", 
-        student_id: "2251220014",
-        class: "22CT1"
+        hoTen: "Trần Thế Kiệt",
+        mssv: "2251220014",
+        lop: "22CT1",
+        app: "DevOps Windows Calculator"
     });
 });
 
+// API Tính toán và lưu DB
+app.post('/api/calculate', (req, res) => {
+    const { type, expression, a, b, c } = req.body;
+    let finalExpr = "";
+    let finalRes = "";
+
+    try {
+        if (type === 'basic_raw') {
+            finalExpr = expression;
+            finalRes = eval(expression).toString();
+        } else if (type === 'quadratic') {
+            const fa = parseFloat(a), fb = parseFloat(b), fc = parseFloat(c);
+            finalExpr = `${fa}x² + ${fb}x + ${fc} = 0`;
+            const delta = fb * fb - 4 * fa * fc;
+            if (delta < 0) finalRes = "Vô nghiệm";
+            else if (delta === 0) finalRes = `x = ${(-fb / (2 * fa)).toFixed(2)}`;
+            else {
+                const x1 = (-fb + Math.sqrt(delta)) / (2 * fa);
+                const x2 = (-fb - Math.sqrt(delta)) / (2 * fa);
+                finalRes = `x1 = ${x1.toFixed(2)}, x2 = ${x2.toFixed(2)}`;
+            }
+        }
+
+        db.query("INSERT INTO history (expression, result) VALUES (?, ?)", [finalExpr, finalRes], () => {
+            res.json({ expression: finalExpr, result: finalRes });
+        });
+    } catch (e) { res.status(400).json({ error: "Lỗi" }); }
+});
+
 app.get('/api/history', (req, res) => {
-    db.query('SELECT * FROM history ORDER BY id DESC LIMIT 10', (err, results) => {
-        if (err) return res.status(500).json(err);
+    db.query("SELECT * FROM history ORDER BY id DESC LIMIT 10", (err, results) => {
         res.json(results);
     });
 });
 
-app.post('/api/calculate', (req, res) => {
-    const { num1, num2, operator } = req.body;
-    let result = 0;
-    const n1 = parseFloat(num1);
-    const n2 = parseFloat(num2);
-
-    if (operator === '+') result = n1 + n2;
-    else if (operator === '-') result = n1 - n2;
-    else if (operator === '*') result = n1 * n2;
-    else if (operator === '/') result = n2 !== 0 ? (n1 / n2).toFixed(2) : "Lỗi chia cho 0";
-
-    const expression = `${n1} ${operator} ${n2}`;
-    db.query('INSERT INTO history (expression, result) VALUES (?, ?)', [expression, result.toString()], (err) => {
-        if (err) return res.status(500).json(err);
-        res.json({ expression, result });
-    });
-});
-
-app.post('/api/quadratic', (req, res) => {
-    const { a, b, c } = req.body;
-    const A = parseFloat(a);
-    const B = parseFloat(b);
-    const C = parseFloat(c);
-
-    if (A === 0) return res.json({ result: "a phải khác 0" });
-
-    const delta = B * B - 4 * A * C;
-    let resultText = "";
-
-    if (delta < 0) resultText = "Vô nghiệm";
-    else if (delta === 0) resultText = `Nghiệm kép x = ${(-B / (2 * A)).toFixed(2)}`;
-    else {
-        const x1 = ((-B + Math.sqrt(delta)) / (2 * A)).toFixed(2);
-        const x2 = ((-B - Math.sqrt(delta)) / (2 * A)).toFixed(2);
-        resultText = `x1 = ${x1}, x2 = ${x2}`;
-    }
-
-    const expression = `${A}x² + ${B}x + ${C} = 0`;
-    db.query('INSERT INTO history (expression, result) VALUES (?, ?)', [expression, resultText], (err) => {
-        if (err) return res.status(500).json(err);
-        res.json({ expression, result: resultText });
-    });
-});
-
-app.listen(process.env.PORT, () => console.log(`Backend is running...`));
+app.listen(5000, () => console.log('🚀 Backend chạy tại port 5000'));

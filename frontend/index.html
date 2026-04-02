@@ -2,91 +2,267 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>DevOps Calculator - Windows Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Calculator - Trần Thế Kiệt</title>
     <style>
-        :root { --accent: #0067c0; --bg: #f3f3f3; }
-        body { font-family: 'Segoe UI', sans-serif; background: #e6e6e6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        #info-card { background: white; padding: 10px 25px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .calc-body { background: var(--bg); width: 320px; border-radius: 8px; border: 1px solid #ccc; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .display { text-align: right; padding: 20px; }
-        #upper { font-size: 14px; color: #666; height: 20px; }
-        #main { font-size: 48px; font-weight: bold; margin: 0; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
-        .btn { background: #f9f9f9; border: 1px solid #e1e1e1; padding: 18px 0; font-size: 18px; cursor: pointer; border-radius: 4px; }
-        .btn:hover { background: #ebebeb; }
-        .btn-blue { background: var(--accent); color: white; border: none; }
-        .extra { margin-top: 15px; background: white; padding: 15px; border-radius: 8px; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
-        .hist-box { max-height: 120px; overflow-y: auto; font-size: 13px; padding: 0; list-style: none; text-align: left; }
-        .hist-box li { border-bottom: 1px solid #eee; padding: 5px; }
+        :root {
+            --bg-color: #f0f2f5;
+            --win-blue: #0067c0;
+            --text-main: #1a1a1a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        /* 1. Thanh điều hướng (Navbar) màu xanh chuẩn mẫu */
+        .navbar {
+            background-color: var(--win-blue);
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 25px;
+            margin: 0 10px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+        .navbar button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .navbar button.active {
+            background: white;
+            color: var(--win-blue);
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        /* 2. Style cho Trang Máy Tính */
+        #calculator-page { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+        .calc-window {
+            background: #f3f3f3;
+            width: 320px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .calc-display {
+            text-align: right;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 0 10px;
+        }
+
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+        .calc-grid button { height: 50px; border: 1px solid #e0e0e0; background: #fff; cursor: pointer; border-radius: 4px; font-size: 18px; }
+        .calc-grid button:hover { background: #f0f0f0; }
+        .calc-grid button.equal-btn { background: var(--win-blue); color: white; grid-row: span 2; height: 102px; }
+
+        .section-card { background: white; width: 320px; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .input-row { display: flex; gap: 5px; margin-bottom: 10px; }
+        .input-row input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-blue { background: var(--win-blue); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+
+        /* 3. Style cho TRANG ABOUT (Giống mẫu Văn Phú Đại) */
+        #about-page { display: none; width: 100%; }
+
+        .about-card {
+            background: white;
+            max-width: 450px;
+            margin: 50px auto;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .about-card h2 { margin-bottom: 25px; font-size: 28px; color: #333; }
+        
+        .info-list { text-align: left; display: inline-block; }
+        .info-list p { font-size: 20px; margin: 15px 0; color: #444; }
+        .info-list strong { width: 100px; display: inline-block; color: #000; }
+
+        /* 4. Lịch sử Database */
+        .history-card { background: white; width: 320px; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-size: 14px; }
+        .history-item { padding: 8px 0; border-bottom: 1px solid #eee; text-align: left; }
     </style>
 </head>
 <body>
-    <div id="info-card">Đang tải...</div>
 
-    <div class="calc-body">
-        <div style="font-size:14px; padding:5px">≡ Chuẩn</div>
-        <div class="display">
-            <div id="upper"></div>
-            <div id="main">0</div>
+    <nav class="navbar">
+        <button id="btn-calc" class="active" onclick="showPage('calculator')">Users</button>
+        <button id="btn-about" onclick="showPage('about')">About</button>
+    </nav>
+
+    <div class="container">
+        
+        <div id="calculator-page">
+            <div class="calc-window">
+                <div style="font-size: 12px;">☰ Chuẩn</div>
+                <div class="calc-display" id="display">0</div>
+                <div class="calc-grid">
+                    <button onclick="clearDisplay()">C</button>
+                    <button onclick="deleteLast()">⌫</button>
+                    <button onclick="appendToDisplay('/')">÷</button>
+                    <button onclick="appendToDisplay('*')">×</button>
+                    <button onclick="appendToDisplay('7')">7</button>
+                    <button onclick="appendToDisplay('8')">8</button>
+                    <button onclick="appendToDisplay('9')">9</button>
+                    <button onclick="appendToDisplay('-')">−</button>
+                    <button onclick="appendToDisplay('4')">4</button>
+                    <button onclick="appendToDisplay('5')">5</button>
+                    <button onclick="appendToDisplay('6')">6</button>
+                    <button onclick="appendToDisplay('+')">+</button>
+                    <button onclick="appendToDisplay('1')">1</button>
+                    <button onclick="appendToDisplay('2')">2</button>
+                    <button onclick="appendToDisplay('3')">3</button>
+                    <button class="equal-btn" onclick="sendCalculate()">=</button>
+                    <button style="grid-column: span 2;" onclick="appendToDisplay('0')">0</button>
+                    <button onclick="appendToDisplay('.')">.</button>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h3 style="margin-top:0">Giải Phương Trình Bậc 2</h3>
+                <div class="input-row">
+                    <input type="number" id="inp-a" placeholder="a">
+                    <input type="number" id="inp-b" placeholder="b">
+                    <input type="number" id="inp-c" placeholder="c">
+                </div>
+                <button class="btn-blue" onclick="solveQuadratic()">Giải PT</button>
+            </div>
+
+            <div class="history-card">
+                <h3 style="margin-top:0">Lịch sử Database</h3>
+                <div id="history-content"></div>
+            </div>
         </div>
-        <div class="grid">
-            <button class="btn" onclick="clearAll()">C</button>
-            <button class="btn" onclick="del()">⌫</button>
-            <button class="btn" onclick="setOp('/')">÷</button>
-            <button class="btn" onclick="setOp('*')">×</button>
-            <button class="btn" onclick="app('7')">7</button><button class="btn" onclick="app('8')">8</button><button class="btn" onclick="app('9')">9</button><button class="btn" onclick="setOp('-')">−</button>
-            <button class="btn" onclick="app('4')">4</button><button class="btn" onclick="app('5')">5</button><button class="btn" onclick="app('6')">6</button><button class="btn" onclick="setOp('+')">+</button>
-            <button class="btn" onclick="app('1')">1</button><button class="btn" onclick="app('2')">2</button><button class="btn" onclick="app('3')">3</button>
-            <button class="btn btn-blue" style="grid-row: span 2" onclick="calc()">=</button>
-            <button class="btn" style="grid-column: span 2" onclick="app('0')">0</button><button class="btn" onclick="app('.')">.</button>
+
+        <div id="about-page">
+            <div class="about-card">
+                <h2>Thông tin sinh viên</h2>
+                <div class="info-list">
+                    <p><strong>Họ tên:</strong> <span id="st-name">Đang tải...</span></p>
+                    <p><strong>MSSV:</strong> <span id="st-id">Đang tải...</span></p>
+                    <p><strong>Lớp:</strong> <span id="st-class">Đang tải...</span></p>
+                    <p><strong>App:</strong> <span id="st-app">Đang tải...</span></p>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="extra">
-        <h4 style="margin:0 0 10px 0">Giải Phương Trình Bậc 2</h4>
-        <input type="number" id="qa" placeholder="a" style="width:50px">
-        <input type="number" id="qb" placeholder="b" style="width:50px">
-        <input type="number" id="qc" placeholder="c" style="width:50px">
-        <button onclick="solveQ()" style="background:var(--accent); color:white; border:none; padding:8px; border-radius:4px; cursor:pointer">Giải PT</button>
-        <p id="qres" style="font-weight:bold; color:var(--accent); margin:10px 0 0 0"></p>
-    </div>
-
-    <div class="extra">
-        <h4 style="margin:0 0 10px 0">Lịch sử Database</h4>
-        <ul id="hlist" class="hist-box"></ul>
     </div>
 
     <script>
-        const API = "http://localhost:5000";
-        let cur = "0", n1 = null, op = null;
-        const main = document.getElementById('main'), upper = document.getElementById('upper');
+        let currentInput = "0";
+        const API_URL = "http://localhost:5000/api";
 
-        function app(n) { cur = (cur === "0") ? n : cur + n; main.innerText = cur; }
-        function clearAll() { cur = "0"; n1 = null; op = null; upper.innerText = ""; main.innerText = "0"; }
-        function del() { cur = cur.slice(0, -1) || "0"; main.innerText = cur; }
-        function setOp(o) { n1 = cur; op = o; upper.innerText = `${n1} ${o}`; cur = "0"; }
+        // Hàm chuyển đổi giữa 2 trang riêng biệt
+        function showPage(page) {
+            const calcPage = document.getElementById('calculator-page');
+            const aboutPage = document.getElementById('about-page');
+            const btnCalc = document.getElementById('btn-calc');
+            const btnAbout = document.getElementById('btn-about');
 
-        function calc() {
-            if (!n1 || !op) return;
-            fetch(`${API}/api/calculate`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({num1: n1, num2: cur, operator: op}) })
-            .then(r => r.json()).then(d => { cur = d.result.toString(); upper.innerText += ` ${cur.split(' ')[0]} =`; main.innerText = cur; loadH(); });
+            if (page === 'calculator') {
+                calcPage.style.display = 'flex';
+                aboutPage.style.display = 'none';
+                btnCalc.classList.add('active');
+                btnAbout.classList.remove('active');
+            } else {
+                calcPage.style.display = 'none';
+                aboutPage.style.display = 'block';
+                btnCalc.classList.remove('active');
+                btnAbout.classList.add('active');
+                loadAboutData(); // Gọi API lấy thông tin khi mở trang About
+            }
         }
 
-        function solveQ() {
-            const a = document.getElementById('qa').value, b = document.getElementById('qb').value, c = document.getElementById('qc').value;
-            fetch(`${API}/api/quadratic`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({a, b, c}) })
-            .then(r => r.json()).then(d => { document.getElementById('qres').innerText = d.result; loadH(); });
+        function loadAboutData() {
+            fetch(`${API_URL}/about`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('st-name').innerText = data.hoTen;
+                    document.getElementById('st-id').innerText = data.mssv;
+                    document.getElementById('st-class').innerText = data.lop;
+                    document.getElementById('st-app').innerText = data.app;
+                });
         }
 
-        function loadH() {
-            fetch(`${API}/api/history`).then(r => r.json()).then(data => {
-                document.getElementById('hlist').innerHTML = data.map(i => `<li>${i.expression} = ${i.result}</li>`).join('');
+        // Logic máy tính giữ nguyên như cũ
+        function appendToDisplay(val) {
+            if (currentInput === "0") currentInput = val;
+            else currentInput += val;
+            document.getElementById('display').innerText = currentInput;
+        }
+
+        function clearDisplay() { currentInput = "0"; document.getElementById('display').innerText = "0"; }
+        function deleteLast() { 
+            currentInput = currentInput.slice(0, -1); 
+            if (currentInput === "") currentInput = "0"; 
+            document.getElementById('display').innerText = currentInput; 
+        }
+
+        function sendCalculate() {
+            fetch(`${API_URL}/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'basic_raw', expression: currentInput })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentInput = data.result;
+                document.getElementById('display').innerText = currentInput;
+                loadHistory();
             });
         }
 
-        fetch(`${API}/about`).then(r => r.json()).then(d => { document.getElementById('info-card').innerText = `${d.name} - ${d.student_id} - ${d.class}`; });
-        loadH();
+        function solveQuadratic() {
+            const a = document.getElementById('inp-a').value;
+            const b = document.getElementById('inp-b').value;
+            const c = document.getElementById('inp-c').value;
+            fetch(`${API_URL}/calculate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'quadratic', a, b, c })
+            })
+            .then(res => res.json())
+            .then(data => { alert("Kết quả: " + data.result); loadHistory(); });
+        }
+
+        function loadHistory() {
+            fetch(`${API_URL}/history`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('history-content').innerHTML = data.map(item => 
+                        `<div class="history-item">${item.expression} = ${item.result}</div>`
+                    ).join('');
+                });
+        }
+
+        loadHistory();
     </script>
 </body>
 </html>
