@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>DevOps Calculator - Windows Style</title>
+    <style>
+        :root { --accent: #0067c0; --bg: #f3f3f3; }
+        body { font-family: 'Segoe UI', sans-serif; background: #e6e6e6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #info-card { background: white; padding: 10px 25px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .calc-body { background: var(--bg); width: 320px; border-radius: 8px; border: 1px solid #ccc; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .display { text-align: right; padding: 20px; }
+        #upper { font-size: 14px; color: #666; height: 20px; }
+        #main { font-size: 48px; font-weight: bold; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+        .btn { background: #f9f9f9; border: 1px solid #e1e1e1; padding: 18px 0; font-size: 18px; cursor: pointer; border-radius: 4px; }
+        .btn:hover { background: #ebebeb; }
+        .btn-blue { background: var(--accent); color: white; border: none; }
+        .extra { margin-top: 15px; background: white; padding: 15px; border-radius: 8px; width: 320px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        .hist-box { max-height: 120px; overflow-y: auto; font-size: 13px; padding: 0; list-style: none; text-align: left; }
+        .hist-box li { border-bottom: 1px solid #eee; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div id="info-card">Đang tải...</div>
+
+    <div class="calc-body">
+        <div style="font-size:14px; padding:5px">≡ Chuẩn</div>
+        <div class="display">
+            <div id="upper"></div>
+            <div id="main">0</div>
+        </div>
+        <div class="grid">
+            <button class="btn" onclick="clearAll()">C</button>
+            <button class="btn" onclick="del()">⌫</button>
+            <button class="btn" onclick="setOp('/')">÷</button>
+            <button class="btn" onclick="setOp('*')">×</button>
+            <button class="btn" onclick="app('7')">7</button><button class="btn" onclick="app('8')">8</button><button class="btn" onclick="app('9')">9</button><button class="btn" onclick="setOp('-')">−</button>
+            <button class="btn" onclick="app('4')">4</button><button class="btn" onclick="app('5')">5</button><button class="btn" onclick="app('6')">6</button><button class="btn" onclick="setOp('+')">+</button>
+            <button class="btn" onclick="app('1')">1</button><button class="btn" onclick="app('2')">2</button><button class="btn" onclick="app('3')">3</button>
+            <button class="btn btn-blue" style="grid-row: span 2" onclick="calc()">=</button>
+            <button class="btn" style="grid-column: span 2" onclick="app('0')">0</button><button class="btn" onclick="app('.')">.</button>
+        </div>
+    </div>
+
+    <div class="extra">
+        <h4 style="margin:0 0 10px 0">Giải Phương Trình Bậc 2</h4>
+        <input type="number" id="qa" placeholder="a" style="width:50px">
+        <input type="number" id="qb" placeholder="b" style="width:50px">
+        <input type="number" id="qc" placeholder="c" style="width:50px">
+        <button onclick="solveQ()" style="background:var(--accent); color:white; border:none; padding:8px; border-radius:4px; cursor:pointer">Giải PT</button>
+        <p id="qres" style="font-weight:bold; color:var(--accent); margin:10px 0 0 0"></p>
+    </div>
+
+    <div class="extra">
+        <h4 style="margin:0 0 10px 0">Lịch sử Database</h4>
+        <ul id="hlist" class="hist-box"></ul>
+    </div>
+
+    <script>
+        const API = "http://localhost:5000";
+        let cur = "0", n1 = null, op = null;
+        const main = document.getElementById('main'), upper = document.getElementById('upper');
+
+        function app(n) { cur = (cur === "0") ? n : cur + n; main.innerText = cur; }
+        function clearAll() { cur = "0"; n1 = null; op = null; upper.innerText = ""; main.innerText = "0"; }
+        function del() { cur = cur.slice(0, -1) || "0"; main.innerText = cur; }
+        function setOp(o) { n1 = cur; op = o; upper.innerText = `${n1} ${o}`; cur = "0"; }
+
+        function calc() {
+            if (!n1 || !op) return;
+            fetch(`${API}/api/calculate`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({num1: n1, num2: cur, operator: op}) })
+            .then(r => r.json()).then(d => { cur = d.result.toString(); upper.innerText += ` ${cur.split(' ')[0]} =`; main.innerText = cur; loadH(); });
+        }
+
+        function solveQ() {
+            const a = document.getElementById('qa').value, b = document.getElementById('qb').value, c = document.getElementById('qc').value;
+            fetch(`${API}/api/quadratic`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({a, b, c}) })
+            .then(r => r.json()).then(d => { document.getElementById('qres').innerText = d.result; loadH(); });
+        }
+
+        function loadH() {
+            fetch(`${API}/api/history`).then(r => r.json()).then(data => {
+                document.getElementById('hlist').innerHTML = data.map(i => `<li>${i.expression} = ${i.result}</li>`).join('');
+            });
+        }
+
+        fetch(`${API}/about`).then(r => r.json()).then(d => { document.getElementById('info-card').innerText = `${d.name} - ${d.student_id} - ${d.class}`; });
+        loadH();
+    </script>
+</body>
+</html>

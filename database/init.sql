@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS calc_db;
+USE calc_db;
+
+CREATE TABLE IF NOT EXISTS history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    expression VARCHAR(255) NOT NULL,
+    result TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO history (expression, result) VALUES ('10 + 5', '15');
